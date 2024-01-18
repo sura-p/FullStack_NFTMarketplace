@@ -47,7 +47,7 @@ function FilterCard(props) {
         const tokenUri = await tokenContract.uri(i.tokenId.toNumber())
         console.log(tokenUri)
   
-        const meta = await axios.get(tokenUri)
+        const meta = await axios.get(`https://nftstorage.link/ipfs/${tokenUri.split("//")[1]}`)
         console.log(meta)
         let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
         let item = {
@@ -55,10 +55,10 @@ function FilterCard(props) {
           tokenId: i.tokenId.toNumber(),
           seller: i.seller,
           owner: i.owner,
-          image: meta.data.image,
+          image: `https://nftstorage.link/ipfs/${meta.data.image.split('//')[1]}`,
           name: meta.data.name,
           description: meta.data.description,
-          categories:meta.data.categories
+          categories:meta.data.properties.categories
           //     amount:meta.data.amount
         }
         return item

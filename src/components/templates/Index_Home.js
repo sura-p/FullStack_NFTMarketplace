@@ -25,51 +25,49 @@ function Index_Home() {
     loadNFTs()
   }, [])
   async function loadNFTs() {
-    /* create a generic provider and query for unsold market items */
-    // const provider = new ethers.providers.JsonRpcProvider("https://ropsten.infura.io/v3/04132d4001834221a021b8e2eac7766c")
-    const provider = new ethers.providers.JsonRpcProvider()
-
-    //await window.ethereum.request({ method: 'eth_requestAccounts' })
-    //const provider = new ethers.providers.Web3Provider(window.ethereum);
-    //const signer = provider.getSigner();
-    const tokenContract = new ethers.Contract(nftmarketaddress, NFT_MarketPlace.abi, provider)
-    // console.log(tokenContract)
-    const data = await tokenContract.fetchMarketItems()
-    // console.log(data)
-    // let meta ;
-    /*
-    *  map over items returned from smart contract and format 
-    *  them as well as fetch their token metadata
-    */
-    const items = await Promise.all(data.map(async i => {
-      console.log(i.tokenId.toNumber())
-      console.log(i.seller)
-      console.log(i.owner)
-      console.log(i.seller)
-      console.log(i.image)
-      const tokenUri = await tokenContract.uri(i.tokenId.toNumber())
-      console.log(tokenUri)
-
-      const meta = await axios.get(tokenUri)
-      console.log(meta)
-      let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
-      let item = {
-        price,
-        tokenId: i.tokenId.toNumber(),
-        seller: i.seller,
-        owner: i.owner,
-        image: meta.data.image,
-        name: meta.data.name,
-        description: meta.data.description,
-        categories:meta.data.categories
-        //     amount:meta.data.amount
-      }
-      return item
-    }))
-    setNfts(items)
-   
-    setLoadingState('loaded')
+    try {
+      /* create a generic provider and query for unsold market items */
+      const provider = new ethers.providers.JsonRpcProvider()
+      const tokenContract = new ethers.Contract(nftmarketaddress, NFT_MarketPlace.abi, provider)
+      const data = await tokenContract.fetchMarketItems()
+  
+      const items = await Promise.all(data.map(async i => {
+        try {
+          const tokenUri = await tokenContract.uri(i.tokenId.toNumber())
+          const meta = await axios.get(`https://nftstorage.link/ipfs/${tokenUri.split("//")[1]}`)
+          console.log(meta);
+          let price = ethers.utils.formatUnits(i.price.toString(), 'ether')
+          let item = {
+            price,
+            tokenId: i.tokenId.toNumber(),
+            seller: i.seller,
+            owner: i.owner,
+            
+            image: `https://nftstorage.link/ipfs/${meta.data.image.split('//')[1]}`,
+            name: meta.data.name,
+            description: meta.data.description,
+            categories: meta.data.properties.categories
+          };
+          return item;
+        } catch (error) {
+          console.error("Error fetching data for tokenId", i.tokenId.toNumber(), ":", error);
+          // Handle specific error or decide how to handle this error
+          return null; // or any other placeholder value
+        }
+      }));
+  
+      // Filter out null values from the array (items with errors)
+      const filteredItems = items.filter(item => item !== null);
+  
+      console.log(filteredItems);
+      setNfts(filteredItems);
+      setLoadingState('loaded');
+    } catch (error) {
+      console.error("Error loading NFTs:", error);
+      // Handle the main error, such as setting an error state
+    }
   }
+  
 
 
  

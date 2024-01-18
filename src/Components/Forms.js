@@ -1,4 +1,7 @@
 import React, { useEffect} from 'react'
+import { NFTStorage, File } from 'nft.storage'
+// import * as fs from 'fs'
+import mime from 'mime'
 import NFT_MarketPlace from '../components/templates/artifacts/contracts/NFT_MarketPlace.sol/NFT_MarketPlace.json'
 import { useState } from "react";
 import Button from 'react-bootstrap/Button';
@@ -10,11 +13,13 @@ import "./Forms.css"
 import "./Cards.css"
 import Created_Nfts from '../components/templates/Created_Nfts';
 import Sold_Nfts from '../components/templates/Sold_Nfts';
-const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
+const client = ipfsHttpClient('https://nftstorage.link')
 
  function Forms() {
+  const nftstorage = new NFTStorage({ token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDRjQWZiZDAwODFhMDUyMzlFQ2IyYzZiQTM1ODJDNkM1YzgxODI2ZDAiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTcwNTM5ODMxMjgxMSwibmFtZSI6Ik5GVC1vcGVuc2VhIn0.rXWIyT-QvKmrSOlZgvNGQ-oQHqcnj5fpDjzCsrE8tOA" })
  
   const [fileUrl, setFileUrl] = useState(null);
+  const [file,setfile]=useState()
   const [formInput, updateFormInput] = useState({ price: '', name: '', description: '',categories:'',file1:'' })
   const [formErrors,setFormError]= useState({});
    const [iscreated,setiscreated]= useState(true);
@@ -67,23 +72,36 @@ const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
  
   async function onChange(e) {
     const file = e.target.files[0]
+    setfile(file)
+    uploadFile(file)
     updateFormInput({...formInput, file1:file} )
     try {
-      const added = await client.add(
-        file,
-        {
-          progress: (prog) => console.log(`received: ${prog}`)
-        }
-      )
-      const url = `https://ipfs.infura.io/ipfs/${added.path}`
-      console.log(url)
-      setFileUrl(url)
+
+
+
+    
+   
     } catch (error) {
       console.log('Error uploading file: ', error)
     }
   }
 
+  const uploadFile = async (file) => {
+    try {
+      // const imageFile = new File([file], 'filename.png', { type: 'image/png' });
+      const url = await nftstorage.store({
+        image:file,
+        name: formInput.name, // Replace with your desired name
+        description: formInput.description, // Replace with your desired description
+      });
+      console.log(url.data);
+      setFileUrl(url.url)
 
+      console.log('NFT stored successfully. URL:', `https://nftstorage.link/ipfs/${url.data.image.href.split('//')[1]}`);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
 
   async function createMarket(e) {
     e.preventDefault();
@@ -94,22 +112,30 @@ const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
     // if (!name || !description || !price || !amount || !fileUrl) return
 
-    console.log(formInput.name);
-    console.log(formInput.price);
+    console.log(file);
+   
     // console.log(formInput.amount);
    
     /* first, upload to IPFS */
-    const data = JSON.stringify({
-      name, description, price, image: fileUrl,categories
-    })
+   
     try {
-      const added = await client.add(data)
-      const url = `https://ipfs.infura.io/ipfs/${added.path}`
+      // const imageFile = new File([file], 'filename.png', { type: 'image/png' });
+      const url = await nftstorage.store({
+        image:file,
+        name: formInput.name, // Replace with your desired name
+        description: formInput.description,
+        properties:{
+          categories:formInput.categories
+        } // Replace with your desired description
+      });
+      console.log(url);
+      createSale(url.url)
+    } 
       /* after file is uploaded to IPFS, pass the URL to save it on Polygon */
     
-      createSale(url)
+     
 
-    } catch (error) {
+     catch (error) {
       console.log('Error uploading file: ', error)
     }
    
@@ -118,6 +144,7 @@ const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
 
   async function createSale(url) {
+    console.log(url);
     const [account]=await window.ethereum.request({ method: 'eth_requestAccounts' })
   const provider = new ethers.providers.Web3Provider(window.ethereum);   
   const signer = provider.getSigner()

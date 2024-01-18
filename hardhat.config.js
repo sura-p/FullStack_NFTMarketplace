@@ -28,18 +28,20 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
       chainId: 1337
     },
 // React_App_ prefix should be mendatory for privatekey in react(.env file) like React_App_privatekey
-  //   ropsten: {
+    sepolia: {
      
-  //     url: "https://ropsten.infura.io/v3/04132d4001834221a021b8e2eac7766c",
-  //     accounts: [process.env.React_App_privatekey],
-  //     gasPrice: 20000000000,
-  //     gas: 6000000,
-  // }
-  //    localhost: {
-     
-  //     gasPrice: 20000000000,
-  //     gas: 6000000,
-  // }
+      url: "https://eth-sepolia.g.alchemy.com/v2/Zg0fGGNnFHhAll9YiaK2vz6YkhdeFNqB",
+      accounts: ["482984883dbdec2abae410eb621cd7ef752661134bc3befdb413ccdefb2e104b"],
+      gasPrice: 20000000000,
+      gas: 6000000,
+  },
+     localhost: {
+      host: "HTTP://127.0.0.1",
+      port: 7545,
+      network_id: 5777,
+      gasPrice: 20000000000,
+      gas: 6000000,
+  }
   }
 }
 
